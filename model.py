@@ -3,6 +3,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns 
 from  pandas_datareader import data as pdr
+
+import os
+import csv
 import datetime as dt
 
 import yfinance as yf
@@ -14,6 +17,9 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense,Dropout,LSTM
 
+
+saved_model_path = "loaded_weights"
+saved_predictions_path = "saved_predictions.csv"
 
 yf.pdr_override()
 
@@ -42,19 +48,24 @@ y_train = np.array(y_train)
 
 X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1))
 
-# Model
-model = Sequential()
-model.add(LSTM(units =50,return_sequences = True,input_shape = (X_train.shape[1],1)))
-model.add(Dropout(0.2))
-model.add(LSTM(units=50,return_sequences = True))
-model.add(Dropout(0.2))
-model.add(LSTM(units = 50))
-model.add(Dropout(0.2))
-model.add(Dense(units = 1))
 
-model.compile(optimizer = 'adam',loss = 'mean_squared_error')
-model.fit(X_train,y_train,epochs = 25,batch_size = 32)
+if os.path.exists(saved_model_path):
+    model = tf.keras.models.load_model(saved_model_path)
+else:
+    model = Sequential()
+    model.add(LSTM(units =50,return_sequences = True,input_shape = (X_train.shape[1],1)))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units=50,return_sequences = True))
+    model.add(Dropout(0.2))
+    model.add(LSTM(units = 50))
+    model.add(Dropout(0.2))
+    model.add(Dense(units = 1))
 
+    model.compile(optimizer = 'adam',loss = 'mean_squared_error')
+    # Train model
+    model.fit(X_train,y_train,epochs = 25,batch_size = 32)
+    # save trained model
+    model.save("./loaded_weights")
 
 # Test Model
 
@@ -81,26 +92,41 @@ for x in range(prediction_days,len(model_inputs)):
 X_test = np.array(X_test)
 X_test = np.reshape(X_test,(X_test.shape[0],X_test.shape[1],1))
 
-predicted_prices = model.predict(X_test)
-predicted_prices = scaler.inverse_transform(predicted_prices)
+prediction = []
+
+if not os.path.exists(saved_predictions_path):
+    predicted_prices = model.predict(X_test)
+    predicted_prices = scaler.inverse_transform(predicted_prices)
 
 
-# plot
-plt.plot(actual_prices,color = 'black',label =f"Actual {company}Price")
-plt.plot(predicted_prices,color = 'green',label = f"Actual {company} Price")
-plt.title(f"{company} Share Price")
-plt.xlabel('Time')
-plt.ylabel(f"{company} Share Price")
-plt.legend()
-plt.show()
+    # plot
+    # plt.plot(actual_prices,color = 'black',label =f"Actual {company}Price")
+    # plt.plot(predicted_prices,color = 'green',label = f"Actual {company} Price")
+    # plt.title(f"{company} Share Price")
+    # plt.xlabel('Time')
+    # plt.ylabel(f"{company} Share Price")
+    # plt.legend()
+    # plt.show()
 
-# predict Next Day
+    # predict Next Day
 
-real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs+1),0]]
-real_data = np.array(real_data)
-real_data = np.reshape(real_data,(real_data.shape[0],real_data.shape[1],1))
+    real_data = [model_inputs[len(model_inputs) + 1 - prediction_days:len(model_inputs+1),0]]
+    real_data = np.array(real_data)
+    real_data = np.reshape(real_data,(real_data.shape[0],real_data.shape[1],1))
 
-prediction = model.predict(real_data)
-prediction = scaler.inverse_transform(prediction)
+    prediction = model.predict(real_data)
+    prediction = scaler.inverse_transform(prediction)
+
+    with open(saved_predictions_path, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(['Prediction'])
+        writer.writerows(prediction)
+else:
+    with open(saved_predictions_path, 'r') as file:
+        reader = csv.reader(file)
+        next(reader)
+        for row in reader:
+            prediction.append(float(row[0]))
+
 
 print(f"Prediction : {prediction}")
