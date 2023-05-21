@@ -1,7 +1,5 @@
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
-import seaborn as sns 
 from  pandas_datareader import data as pdr
 
 import os
@@ -18,8 +16,8 @@ from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense,Dropout,LSTM
 
 
-saved_model_path = "loaded_weights"
-saved_predictions_path = "saved_predictions.csv"
+_SAVED_MODEL_PATH = "loaded_weights"
+_SAVED_PREDICTIONS_PATH = "saved_predictions.csv"
 
 yf.pdr_override()
 
@@ -49,8 +47,8 @@ y_train = np.array(y_train)
 X_train = np.reshape(X_train,(X_train.shape[0],X_train.shape[1],1))
 
 
-if os.path.exists(saved_model_path):
-    model = tf.keras.models.load_model(saved_model_path)
+if os.path.exists(_SAVED_MODEL_PATH):
+    model = tf.keras.models.load_model(_SAVED_MODEL_PATH)
 else:
     model = Sequential()
     model.add(LSTM(units =50,return_sequences = True,input_shape = (X_train.shape[1],1)))
@@ -94,7 +92,7 @@ X_test = np.reshape(X_test,(X_test.shape[0],X_test.shape[1],1))
 
 prediction = []
 
-if not os.path.exists(saved_predictions_path):
+if not os.path.exists(_SAVED_PREDICTIONS_PATH):
     predicted_prices = model.predict(X_test)
     predicted_prices = scaler.inverse_transform(predicted_prices)
 
@@ -117,12 +115,12 @@ if not os.path.exists(saved_predictions_path):
     prediction = model.predict(real_data)
     prediction = scaler.inverse_transform(prediction)
 
-    with open(saved_predictions_path, 'w', newline='') as file:
+    with open(_SAVED_PREDICTIONS_PATH, 'w', newline='') as file:
         writer = csv.writer(file)
         writer.writerow(['Prediction'])
         writer.writerows(prediction)
 else:
-    with open(saved_predictions_path, 'r') as file:
+    with open(_SAVED_PREDICTIONS_PATH, 'r') as file:
         reader = csv.reader(file)
         next(reader)
         for row in reader:
@@ -130,3 +128,5 @@ else:
 
 
 print(f"Prediction : {prediction}")
+def predict():
+    return prediction[0][0]
