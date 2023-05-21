@@ -24,7 +24,7 @@ yf.pdr_override()
 Y_SYMBOLS = ['META']
 company = Y_SYMBOLS[0]
 start = dt.datetime(2012,1,1)
-stop = dt.datetime(2022,1,1)
+stop = dt.datetime(2023,1,1)
 
 data = pdr.get_data_yahoo(Y_SYMBOLS,start=start,end=stop)
 
@@ -126,7 +126,12 @@ else:
         for row in reader:
             prediction.append(float(row[0]))
 
-
-print(f"Prediction : {prediction}")
 def predict():
     return prediction[0][0]
+
+def seven_day_data(comp):
+    start = '2023-05-13'
+    stop = '2023-05-20'
+
+    df = yf.Download(comp,start = start,end = stop)
+    return df['Close'].values.tolist()

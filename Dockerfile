@@ -9,4 +9,4 @@ RUN pip --default-timeout=4000 install -r requirements.txt
 # expose required port
 EXPOSE 5000
 # entrypoint
-CMD ["python"]
+ENTRYPOINT ["gunicorn", "app:app", "-b", "0.0.0.0:5000"]
